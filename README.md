@@ -12,6 +12,8 @@ OpenClaw 飞书插件（优化版），基于官方 `@openclaw/feishu` 插件改
 - 支持 `force: true` 参数强制绕过缓存
 - 错误结果同样缓存，避免对故障端点的重复请求
 
+> 📖 技术细节详见 [Probe 缓存机制技术详解](docs/probe-cache-mechanism.md)
+
 ## 改动文件
 
 | 文件 | 说明 |
