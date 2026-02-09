@@ -14,6 +14,26 @@ OpenClaw 飞书插件（优化版），基于官方 `@openclaw/feishu` 插件改
 
 > 📖 技术细节详见 [Probe 缓存机制技术详解](docs/probe-cache-mechanism.md)
 
+### Typing Indicator 优化
+
+飞书 Bot 处理消息时的"正在输入"状态指示器（基于 reaction），支持配置化控制：
+
+- 可完全关闭，避免不必要的 API 调用
+- 可自定义刷新间隔（默认 6 秒），降低 API 配额消耗
+- 插件层节流，不依赖框架修改
+
+```jsonc
+// ~/.openclaw/openclaw.json → channels.feishu
+{
+  "typingIndicator": {
+    "enabled": false,       // 关闭 typing indicator
+    "intervalSeconds": 30   // 或调大刷新间隔
+  }
+}
+```
+
+> 📖 详细说明见 [Typing Indicator 配置说明](docs/typing-indicator.md)
+
 ## 改动文件
 
 | 文件 | 说明 |
@@ -21,6 +41,7 @@ OpenClaw 飞书插件（优化版），基于官方 `@openclaw/feishu` 插件改
 | `src/probe-cache.ts` | 新增：内存缓存模块（24h TTL） |
 | `src/probe.ts` | 改造：集成缓存读写逻辑 |
 | `src/channel.ts` | 改造：gateway 启动时预热缓存 |
+| `src/reply-dispatcher.ts` | 改造：typing indicator 开关与节流 |
 | `index.ts` | 改造：导出缓存工具函数 |
 
 ## 基于

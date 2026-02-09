@@ -54,13 +54,28 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
 
   // Feishu doesn't have a native typing indicator API.
   // We use message reactions as a typing indicator substitute.
+  // Can be disabled or tuned via channels.feishu.typingIndicator config.
   let typingState: TypingIndicatorState | null = null;
+  let lastTypingCallAt = 0;
+
+  const feishuCfg = account.config;
+  const typingCfg = (feishuCfg as Record<string, unknown>)?.typingIndicator as
+    | { enabled?: boolean; intervalSeconds?: number }
+    | undefined;
+  const typingEnabled = typingCfg?.enabled !== false; // default: enabled
 
   const typingCallbacks = createTypingCallbacks({
     start: async () => {
-      if (!replyToMessageId) {
+      if (!typingEnabled || !replyToMessageId) {
         return;
       }
+      // Throttle: SDK calls every 6s, but we only hit the API per configured interval
+      const intervalMs = (typingCfg?.intervalSeconds ?? 6) * 1000;
+      const now = Date.now();
+      if (typingState && now - lastTypingCallAt < intervalMs) {
+        return; // skip this tick
+      }
+      lastTypingCallAt = now;
       typingState = await addTypingIndicator({ cfg, messageId: replyToMessageId, accountId });
       params.runtime.log?.(`feishu[${account.accountId}]: added typing indicator reaction`);
     },
