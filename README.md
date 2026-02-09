@@ -39,6 +39,25 @@ pip3 install faster-whisper
 | `src/bot.ts` | 改造：audio 消息自动转写为文本 |
 | `index.ts` | 改造：导出缓存工具函数 |
 
+## 快速部署
+
+```bash
+git clone https://github.com/haotian2546/openclaw-feishu.git
+cd openclaw-feishu
+git checkout feat/voice-to-text
+./scripts/deploy-voice.sh
+```
+
+脚本会自动完成：创建 Python 虚拟环境 → 安装 faster-whisper → 下载 Whisper 模型 → 部署插件文件 → 重启 Gateway。
+
+如需指定模型大小（默认 `base`）：
+
+```bash
+./scripts/deploy-voice.sh large-v3
+```
+
+详细配置说明见 [docs/voice-to-text-setup.md](docs/voice-to-text-setup.md)。
+
 ## 基于
 
 - `@openclaw/feishu` v2026.2.6-3
