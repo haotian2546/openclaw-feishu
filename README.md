@@ -1,5 +1,7 @@
 # openclaw-feishu
 
+**简体中文** | [English](README.en.md)
+
 OpenClaw 飞书插件（优化版），基于官方 `@openclaw/feishu` 插件改造。
 
 ## 优化内容
