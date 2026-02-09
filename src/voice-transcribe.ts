@@ -47,10 +47,13 @@ export async function transcribeAudio(params: {
   const scriptPath = getScriptPath();
 
   return new Promise((resolve, reject) => {
+    const python = process.env.WHISPER_PYTHON ?? "/home/nvidia/.openclaw-whisper-venv/bin/python3";
+    const env = { ...process.env };
+    if (!env.HF_ENDPOINT) env.HF_ENDPOINT = "https://hf-mirror.com";
     execFile(
-      "python3",
+      python,
       [scriptPath, audioPath, modelSize],
-      { timeout: timeoutMs, maxBuffer: 10 * 1024 * 1024 },
+      { timeout: timeoutMs, maxBuffer: 10 * 1024 * 1024, env },
       (err, stdout, stderr) => {
         if (err) {
           reject(new Error(`Whisper transcription failed: ${err.message}\nstderr: ${stderr}`));
