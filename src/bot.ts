@@ -10,6 +10,7 @@ import type { FeishuMessageContext, FeishuMediaInfo, ResolvedFeishuAccount } fro
 import { resolveFeishuAccount } from "./accounts.js";
 import { createFeishuClient } from "./client.js";
 import { downloadMessageResourceFeishu } from "./media.js";
+import { transcribeAudio } from "./voice-transcribe.js";
 import { extractMentionTargets, extractMessageBody, isMentionForwardRequest } from "./mention.js";
 import {
   resolveFeishuGroupConfig,
@@ -697,6 +698,29 @@ export async function handleFeishuMessage(params: {
         }
       } catch (err) {
         log(`feishu[${account.accountId}]: failed to fetch quoted message: ${String(err)}`);
+      }
+    }
+
+    // Voice-to-text: transcribe audio messages using faster-whisper
+    if (event.message.message_type === "audio" && mediaList.length > 0) {
+      const audioMedia = mediaList[0];
+      try {
+        log(`feishu[${account.accountId}]: transcribing audio message via faster-whisper...`);
+        const whisperModel = (feishuCfg as Record<string, unknown>)?.whisperModel as string | undefined;
+        const result = await transcribeAudio({
+          audioPath: audioMedia.path,
+          modelSize: whisperModel ?? "base",
+        });
+        if (result.text) {
+          ctx = { ...ctx, content: result.text, contentType: "text" };
+          log(`feishu[${account.accountId}]: transcribed audio (lang=${result.language}): ${result.text.slice(0, 100)}`);
+        } else {
+          log(`feishu[${account.accountId}]: audio transcription returned empty text`);
+          ctx = { ...ctx, content: "[语音消息，内容无法识别]" };
+        }
+      } catch (err) {
+        log(`feishu[${account.accountId}]: audio transcription failed: ${String(err)}`);
+        ctx = { ...ctx, content: "[语音消息，转写失败]" };
       }
     }
 
