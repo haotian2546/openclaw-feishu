@@ -2,7 +2,11 @@
 
 ## 概述
 
-完整备份 OpenClaw 的所有数据，支持跨系统迁移（Linux ↔ macOS ↔ Windows WSL）。
+完整备份 OpenClaw 的所有数据，支持跨系统迁移（Linux ↔ macOS ↔ Windows）。
+
+- Linux / macOS：使用 `scripts/openclaw-backup.sh`（备份为 `.tar.gz`）
+- Windows：使用 `scripts\openclaw-backup.bat`（备份为 `.zip`）
+- 两种格式**互相兼容**，还原时自动识别 `.tar.gz` 和 `.zip`
 
 ### 备份内容
 
@@ -59,37 +63,71 @@
 ./scripts/openclaw-backup.sh info openclaw_20260209_230000.tar.gz
 ```
 
-## 跨系统迁移流程
+## Windows 使用
 
-### 从旧机器导出
+```cmd
+:: 完整备份
+scripts\openclaw-backup.bat backup
 
-```bash
-# 1. 创建完整备份
-./scripts/openclaw-backup.sh backup
+:: 不含媒体的轻量备份
+scripts\openclaw-backup.bat backup --no-media
 
-# 2. 备份文件在 ~/openclaw-backups/ 下
-ls ~/openclaw-backups/
+:: 还原（支持 .zip 和 .tar.gz）
+scripts\openclaw-backup.bat restore %USERPROFILE%\openclaw-backups\openclaw_20260209.zip
 
-# 3. 传输到新机器（任选一种方式）
-scp ~/openclaw-backups/openclaw_*.tar.gz user@new-machine:~/
-# 或 U盘、网盘等
+:: 预览还原内容
+scripts\openclaw-backup.bat restore backup.zip --dry-run
+
+:: 列出备份 / 查看详情
+scripts\openclaw-backup.bat list
+scripts\openclaw-backup.bat info backup.zip
 ```
 
-### 在新机器还原
+Windows 版说明：
+- 备份格式为 `.zip`（通过 PowerShell 压缩）
+- 还原时同时支持 `.zip` 和 `.tar.gz`（Win10+ 自带 tar）
+- 数据目录默认 `%USERPROFILE%\.openclaw`
+- 备份目录默认 `%USERPROFILE%\openclaw-backups`
+- 不支持 `--encrypt`（Windows 无内置 gpg，如需加密请单独安装 Gpg4win）
+
+## 跨系统迁移流程
+
+### Linux/macOS → Windows
 
 ```bash
-# 1. 安装 OpenClaw（如果还没装）
-# npm install -g openclaw
+# 旧机器（Linux/macOS）
+./scripts/openclaw-backup.sh backup
+# 将 ~/openclaw-backups/openclaw_*.tar.gz 拷贝到 Windows
+```
 
-# 2. 克隆工具仓库
-git clone https://github.com/haotian2546/openclaw-feishu.git
-cd openclaw-feishu
-
-# 3. 还原数据
-./scripts/openclaw-backup.sh restore ~/openclaw_20260209_230000.tar.gz
-
-# 4. 重启 Gateway
+```cmd
+:: 新机器（Windows）—— 直接还原 tar.gz
+scripts\openclaw-backup.bat restore C:\Users\you\openclaw_20260209.tar.gz
 openclaw gateway restart
+```
+
+### Windows → Linux/macOS
+
+```cmd
+:: 旧机器（Windows）
+scripts\openclaw-backup.bat backup
+:: 将 %USERPROFILE%\openclaw-backups\openclaw_*.zip 拷贝到 Linux
+```
+
+```bash
+# 新机器（Linux/macOS）—— 直接还原 zip
+./scripts/openclaw-backup.sh restore ~/openclaw_20260209.zip
+openclaw gateway restart
+```
+
+### 同系统迁移
+
+```bash
+# Linux/macOS
+./scripts/openclaw-backup.sh backup
+scp ~/openclaw-backups/openclaw_*.tar.gz user@new-machine:~/
+# 新机器
+./scripts/openclaw-backup.sh restore ~/openclaw_*.tar.gz
 ```
 
 ## 安全说明

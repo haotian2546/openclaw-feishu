@@ -236,7 +236,11 @@ do_restore() {
 
   # 解压到临时目录
   local tmp_dir=$(mktemp -d)
-  tar -xzf "$archive" -C "$tmp_dir"
+  if [[ "$archive" == *.zip ]]; then
+    unzip -q "$archive" -d "$tmp_dir"
+  else
+    tar -xzf "$archive" -C "$tmp_dir"
+  fi
 
   # 找到备份根目录
   local backup_root=$(find "$tmp_dir" -name ".backup-meta.json" -exec dirname {} \; | head -1)
@@ -343,7 +347,7 @@ do_list() {
     return
   fi
 
-  local files=$(find "$BACKUP_DIR" -maxdepth 1 -name "openclaw_*.tar.gz*" -type f 2>/dev/null | sort -r)
+  local files=$(find "$BACKUP_DIR" -maxdepth 1 \( -name "openclaw_*.tar.gz*" -o -name "openclaw_*.zip" \) -type f 2>/dev/null | sort -r)
   if [ -z "$files" ]; then
     info "暂无备份"
     return
@@ -381,6 +385,8 @@ do_info() {
     local decrypted="${tmp_dir}/decrypted.tar.gz"
     gpg --decrypt --output "$decrypted" "$backup_file"
     tar -xzf "$decrypted" -C "$tmp_dir"
+  elif [[ "$backup_file" == *.zip ]]; then
+    unzip -q "$backup_file" -d "$tmp_dir"
   else
     tar -xzf "$backup_file" -C "$tmp_dir"
   fi
