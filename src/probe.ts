@@ -4,10 +4,6 @@ import { getCachedProbe, setCachedProbe } from "./probe-cache.js";
 
 /**
  * Probe Feishu bot status with 24h in-memory cache.
- * On gateway startup the first call hits the API and caches the result.
- * Subsequent calls within 24h return the cached result directly.
- * After 24h the cache expires and the API is called again.
- *
  * Pass `force: true` to bypass the cache.
  */
 export async function probeFeishu(
@@ -23,7 +19,6 @@ export async function probeFeishu(
 
   const cacheKey = creds.accountId ?? creds.appId;
 
-  // Check cache unless forced
   if (!opts?.force) {
     const cached = getCachedProbe(cacheKey);
     if (cached) return cached;
@@ -63,7 +58,6 @@ export async function probeFeishu(
       appId: creds.appId,
       error: err instanceof Error ? err.message : String(err),
     };
-    // Cache errors too to avoid hammering a broken endpoint
     setCachedProbe(cacheKey, result);
     return result;
   }
