@@ -55,6 +55,17 @@ pip3 install faster-whisper
 
 > 📖 详细说明见 [Typing Indicator 配置说明](docs/typing-indicator.md)
 
+### 流式卡片（Streaming Card）
+
+基于飞书 Card Kit 流式 API，实现实时文本输出效果：
+
+- 回复时先显示"⏳ Thinking..."占位卡片
+- 模型生成过程中增量更新卡片内容
+- 生成完成后关闭流式模式，显示最终结果
+- 自动节流（100ms），避免 API 限流
+
+通过 `channels.feishu.streaming` 配置开关（默认开启）。
+
 ### 备份与还原
 
 完整备份 OpenClaw 所有数据（配置、聊天记录、记忆、媒体文件等），支持跨系统迁移。
@@ -66,17 +77,45 @@ pip3 install faster-whisper
 
 > 📖 详细说明见 [备份与还原指南](docs/backup-restore.md)
 
+## v2026.2.22 合并的上游变更
+
+本版本合并了官方 `@openclaw/feishu` v2026.2.22 的所有变更：
+
+- **持久化消息去重**（`dedup.ts`）：基于内存 + 磁盘的 24h TTL 去重，重启后不会重复处理消息
+- **外部 Key 校验**（`external-keys.ts`）：对飞书 API 返回的 image_key/file_key 进行安全校验
+- **发送结果辅助**（`send-result.ts`）：统一的 API 响应断言和结果转换
+- **流式卡片**（`streaming-card.ts`）：Card Kit 流式 API 实时文本输出
+- **安全加固**：
+  - `mention.ts`：`escapeRegExp` 防止正则注入
+  - `policy.ts`：移除 senderName 匹配，仅基于 ID 的 allowlist 检查，使用 SDK `AllowlistMatch`
+  - `monitor.ts`：Webhook 请求体大小限制、超时、速率限制、Content-Type 校验
+- **SDK 对齐**：
+  - `channel.ts`：使用 `buildBaseChannelStatusSummary`、`createDefaultChannelRuntimeState`、`resolveAllowlistProviderRuntimeGroupPolicy`
+  - `bot.ts`：使用 `resolveOpenProviderRuntimeGroupPolicy`、`buildAgentMediaPayload`、增强的 `checkBotMentioned`（支持 post 消息）、完整的 DM pairing 流程
+  - `types.ts`：使用 `BaseProbeResult`
+  - `config-schema.ts`：`StreamingModeSchema`、`webhookHost`、`FeishuSharedConfigShape` 提取、webhook `verificationToken` 校验
+
 ## 改动文件
 
 | 文件 | 说明 |
 |------|------|
-| `src/probe-cache.ts` | 新增：内存缓存模块（24h TTL） |
-| `src/probe.ts` | 改造：集成缓存读写逻辑 |
-| `src/channel.ts` | 改造：gateway 启动时预热缓存 |
-| `src/voice-transcribe.ts` | 新增：faster-whisper 语音转文字模块 |
-| `src/bot.ts` | 改造：audio 消息自动转写为文本 |
-| `src/reply-dispatcher.ts` | 改造：typing indicator 开关与节流 |
-| `index.ts` | 改造：导出缓存工具函数 |
+| `src/dedup.ts` | 新增：持久化消息去重（上游） |
+| `src/external-keys.ts` | 新增：外部 Key 安全校验（上游） |
+| `src/send-result.ts` | 新增：发送结果辅助函数（上游） |
+| `src/streaming-card.ts` | 新增：Card Kit 流式卡片（上游） |
+| `src/probe-cache.ts` | 自定义：内存缓存模块（24h TTL） |
+| `src/probe.ts` | 自定义：集成缓存读写逻辑 |
+| `src/voice-transcribe.ts` | 自定义：faster-whisper 语音转文字模块 |
+| `src/channel.ts` | 合并：上游 SDK 对齐 + 自定义 probe 缓存预热 |
+| `src/bot.ts` | 合并：上游重写 + 自定义语音转写集成 |
+| `src/reply-dispatcher.ts` | 合并：上游流式卡片 + 自定义 typing 节流 |
+| `src/config-schema.ts` | 上游：StreamingMode、webhookHost、superRefine |
+| `src/mention.ts` | 上游：escapeRegExp 安全修复 |
+| `src/policy.ts` | 上游：ID-only allowlist、senderIds |
+| `src/send.ts` | 上游：使用 send-result 辅助 |
+| `src/monitor.ts` | 上游：Webhook 安全加固 |
+| `src/types.ts` | 上游：BaseProbeResult |
+| `index.ts` | 合并：上游导出 + 自定义 probe-cache 导出 |
 
 ## 快速部署
 
@@ -96,5 +135,5 @@ cd openclaw-feishu
 
 ## 基于
 
-- `@openclaw/feishu` v2026.2.6-3
-- OpenClaw 2026.2.6-3
+- `@openclaw/feishu` v2026.2.22
+- OpenClaw 2026.2.22
